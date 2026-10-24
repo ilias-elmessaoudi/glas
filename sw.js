@@ -1,5 +1,5 @@
 // Hält die App-Hülle offline bereit, damit sie vom Homescreen sofort startet.
-const CACHE = 'glas-v1';
+const CACHE = 'glas-v2';
 const HUELLE = ['./', 'index.html', 'style.css', 'app.js', 'spotify.js', 'config.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/herz.svg', 'icons/leer.svg'];
 
 self.addEventListener('install', (e) => {
