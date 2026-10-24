@@ -1,5 +1,5 @@
 // Hält die App-Hülle offline bereit, damit sie vom Homescreen sofort startet.
-const CACHE = 'glas-v2';
+const CACHE = 'glas-v3';
 const HUELLE = ['./', 'index.html', 'style.css', 'app.js', 'spotify.js', 'config.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/herz.svg', 'icons/leer.svg'];
 
 self.addEventListener('install', (e) => {
@@ -13,7 +13,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin || e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request).then((r) => {
+    fetch(e.request.url, { cache: 'no-cache' }).then((r) => {
       const kopie = r.clone();
       caches.open(CACHE).then((c) => c.put(e.request, kopie));
       return r;
