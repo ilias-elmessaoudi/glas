@@ -156,7 +156,7 @@ async function titelGewechselt(t) {
   $('.mini-cover').src = bild(t.album?.images || t.images, 120);
   if (t.type === 'track' && !z.liked.has(t.id)) {
     try {
-      const [ja] = await api('/me/tracks/contains', { query: { ids: t.id } });
+      const [ja] = await api('/me/library/contains', { query: { uris: t.uri } });
       z.liked.set(t.id, ja);
     } catch {}
   }
@@ -263,7 +263,7 @@ const aktionen = {
     const t = aktuellerTitel(); if (!t || t.type !== 'track') return;
     const neu = !z.liked.get(t.id);
     z.liked.set(t.id, neu); zeigeStatus();
-    try { await api('/me/tracks', { method: neu ? 'PUT' : 'DELETE', query: { ids: t.id } }); }
+    try { await api('/me/library', { method: neu ? 'PUT' : 'DELETE', query: { uris: t.uri } }); }
     catch (e) { z.liked.set(t.id, !neu); zeigeStatus(); fehler(e); }
   },
   oeffnen() { spielerAuf(); },
@@ -542,7 +542,7 @@ const seiten = {
 
   async playlist(id) {
     laden();
-    const [p, t] = await Promise.all([api(`/playlists/${id}`, { query: { fields: 'name,description,images,owner(display_name),uri' } }), playlistTitel(id)]);
+    const [p, t] = await Promise.all([api(`/playlists/${id}`), playlistTitel(id)]);
     const titel = (t.items || []).map((i) => i.item || i.track).filter((x) => x?.type === 'track');
     await seite(`${zurueckKnopf}
       <div class="detail-kopf"><img src="${bild(p.images, 640)}" alt=""><h1>${esc(p.name)}</h1><p>${esc(p.owner?.display_name || '')} · ${t.total ?? titel.length} Songs</p>
@@ -570,7 +570,9 @@ const seiten = {
       api(`/artists/${id}`),
       api(`/artists/${id}/albums`, { query: { include_groups: 'album,single', limit: 10 } }).catch(() => null),
     ]);
-    const top = await api(`/artists/${id}/top-tracks`).catch(() => null);
+    // "Top-Titel" ist für eigene Apps seit 2026 gesperrt, die Suche liefert die beliebtesten Songs ähnlich.
+    const suche = await api('/search', { query: { q: `artist:"${k.name}"`, type: 'track', limit: 10 } }).catch(() => null);
+    const top = { tracks: (suche?.tracks?.items || []).filter((t) => t?.artists?.some((a) => a.id === id)) };
     await seite(`${zurueckKnopf}
       <div class="detail-kopf rund"><img src="${bild(k.images, 640)}" alt=""><h1>${esc(k.name)}</h1><p>Künstler</p>
         <div class="detail-knoepfe"><button class="pille glas" id="alle">${ICON.play} Abspielen</button></div></div>

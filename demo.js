@@ -75,11 +75,12 @@ export async function demoApi(pfad, { method = 'GET', body, query = {} } = {}) {
   if (route === 'GET /me/top/artists') return { items: kuenstler };
   if (route === 'GET /me/playlists') return { items: playlists };
   if (route === 'GET /me/tracks') return { total: p.liked.size, items: titel.filter((t) => p.liked.has(t.id)).map((t) => ({ track: t })) };
-  if (route === 'GET /me/tracks/contains') return [p.liked.has(query.ids)];
-  if (route === 'PUT /me/tracks') { p.liked.add(query.ids); return null; }
-  if (route === 'DELETE /me/tracks') { p.liked.delete(query.ids); return null; }
+  const idAus = (uri) => String(uri).split(':').pop();
+  if (route === 'GET /me/library/contains') return [p.liked.has(idAus(query.uris))];
+  if (route === 'PUT /me/library') { p.liked.add(idAus(query.uris)); return null; }
+  if (route === 'DELETE /me/library') { p.liked.delete(idAus(query.uris)); return null; }
   if (route === 'GET /search') {
-    const q = (query.q || '').toLowerCase();
+    const q = (query.q || '').toLowerCase().replace(/^artist:"(.*)"$/, '$1');
     const passt = (x) => x.name.toLowerCase().includes(q) || x.artists?.some((a) => a.name.toLowerCase().includes(q));
     return { tracks: { items: titel.filter(passt) }, artists: { items: kuenstler.filter(passt) }, albums: { items: alben.filter(passt) }, playlists: { items: playlists.filter(passt) } };
   }
