@@ -126,6 +126,11 @@ async function abfragen() {
   clearTimeout(abfrageTimer);
   try {
     const s = await player.status();
+    // Spotify meldet Pause/Play erst mit Verzögerung: kurz nach einem Klick dem eigenen Stand trauen.
+    if (s && z.erwartet && performance.now() < z.erwartet.bis && s.is_playing !== z.erwartet.spielt) {
+      s.is_playing = z.erwartet.spielt;
+      s.progress_ms = position();
+    }
     const vorher = aktuellerTitel()?.id;
     z.status = s;
     z.abgerufen = performance.now();
@@ -245,8 +250,9 @@ const aktionen = {
     const war = spielt();
     z.status.progress_ms = position(); z.abgerufen = performance.now();
     z.status.is_playing = !war; zeigeStatus();
-    try { await (war ? player.pause() : player.play()); } catch (e) { fehler(e); }
-    baldAbfragen(600);
+    z.erwartet = { spielt: !war, bis: performance.now() + 2500 };
+    try { await (war ? player.pause() : player.play()); } catch (e) { z.erwartet = null; fehler(e); }
+    baldAbfragen(1200);
   },
   async weiter() { try { await player.weiter(); } catch (e) { fehler(e); } baldAbfragen(); },
   async zurueck() {
