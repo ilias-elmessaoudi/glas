@@ -589,7 +589,7 @@ async function route() {
   try {
     await (seiten[n] || seiten.start)(id);
   } catch (e) {
-    await seite(`<p class="leer">Konnte nicht geladen werden.<br><small>${esc(e.message)}</small></p>`);
+    await seite(`<div class="leer">Konnte nicht geladen werden.<br><small>${esc(e.message)}</small><br><br><button class="pille glas" onclick="dispatchEvent(new HashChangeEvent('hashchange'))">Nochmal</button></div>`);
   }
 }
 

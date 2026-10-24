@@ -105,7 +105,7 @@ export class ApiFehler extends Error {
   constructor(status, text) { super(text); this.status = status; }
 }
 
-export async function api(pfad, { method = 'GET', body, query } = {}) {
+export async function api(pfad, { method = 'GET', body, query } = {}, versuch = 0) {
   if (demo) return (await import('./demo.js')).demoApi(pfad, { method, body, query });
   const url = new URL(pfad.startsWith('http') ? pfad : API + pfad);
   if (query) for (const [k, v] of Object.entries(query)) if (v != null) url.searchParams.set(k, v);
@@ -114,11 +114,16 @@ export async function api(pfad, { method = 'GET', body, query } = {}) {
     headers: { Authorization: 'Bearer ' + (await token()), ...(body ? { 'Content-Type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
+  // Kurze Störungen bei Spotify (5xx) einfach nochmal versuchen
+  if (r.status >= 500 && versuch < 2) {
+    await new Promise((ok) => setTimeout(ok, 400 * (versuch + 1)));
+    return api(pfad, { method, body, query }, versuch + 1);
+  }
   if (r.status === 204 || r.status === 202) return null;
   if (r.status === 401) { abmelden(); location.reload(); }
   const text = await r.text();
   if (!r.ok) {
-    let msg = text;
+    let msg = text || 'Spotify antwortet gerade nicht (' + r.status + ')';
     try { msg = JSON.parse(text).error.message; } catch {}
     throw new ApiFehler(r.status, msg);
   }
